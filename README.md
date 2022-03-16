@@ -1,7 +1,7 @@
 <?php
 class Api {
     // API URL
-    public $api_url = 'http://yourwebsite.com/api/v1'; 
+    public $api_url = 'http://azepanel.com/api/v1'; 
 
     // Your API key
     public $api_key = ''; 
