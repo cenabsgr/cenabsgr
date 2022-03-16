@@ -1,122 +1,81 @@
 <?php
-class Api {
-    // API URL
-    public $api_url = 'http://azepanel.com/api/v1'; 
+class Api
+{
+    public $api_url = 'https://azepanel.com/api/v2'; // API URL
 
-    // Your API key
-    public $api_key = ''; 
+    public $api_key = ''; // Your API key
 
-    /**
-     *
-     * Add Order
-     *
-     */
-    public function add_order($data) { 
+    public function order($data) { // add order
         $post = array_merge(array('key' => $this->api_key, 'action' => 'add'), $data);
-        $result = $this->connect($post);
-        return json_decode($result);
+        return json_decode($this->connect($post));
     }
 
-    /**
-     *
-     * Order status
-     *
-     */
-    public function status($order_id) { 
-        $result = $this->connect(array(
-            'key'    => $this->api_key,
+    public function status($order_id) { // get order status
+        return json_decode($this->connect(array(
+            'key' => $this->api_key,
             'action' => 'status',
-            'order'  => $order_id
-        ));
-        return json_decode($result);
+            'order' => $order_id
+        )));
     }
 
-    /**
-     *
-     * Order multi status
-     *
-     */
+    public function multiStatus($order_ids) { // get order status
+        return json_decode($this->connect(array(
+            'key' => $this->api_key,
+            'action' => 'status',
+            'orders' => implode(",", (array)$order_ids)
+        )));
+    }
 
-    public function multi_status($order_ids) { 
-        $result = $this->connect(array(
-            'key'        => $this->api_key,
-            'action'     => 'status',
-            'orders'     => implode(",", (array)$order_ids)
-        ));
-        return json_decode($result);
+    public function services() { // get services
+        return json_decode($this->connect(array(
+            'key' => $this->api_key,
+            'action' => 'services',
+        )));
+    }
+
+    public function balance() { // get balance
+        return json_decode($this->connect(array(
+            'key' => $this->api_key,
+            'action' => 'balance',
+        )));
     }
 
 
-    /**
-     *
-     * All services
-     *
-     */
-    public function services() { 
-        $result = $this->connect(array(
-            'key'     => $this->api_key,
-            'action'  => 'services',
-        ));
-        return json_decode($result);
-    }
-
-    /**
-     *
-     * Balance
-     *
-     */
-    public function balance() { 
-        $result = $this->connect(array(
-            'key'     => $this->api_key,
-            'action'  => 'balance',
-        ));
-        return json_decode($result);
-    }
-
-    /**
-     *
-     * Connect to panel
-     *
-     */
     private function connect($post) {
         $_post = Array();
-
         if (is_array($post)) {
-          foreach ($post as $name => $value) {
-            $_post[] = $name.'='.urlencode($value);
-          }
+            foreach ($post as $name => $value) {
+                $_post[] = $name.'='.urlencode($value);
+            }
         }
 
-        if (is_array($post)) {
-          $url_complete = join('&', $_post);
-        }
-        $url = $this->api_url."?".$url_complete;
-
-        $ch = curl_init($url);
+        $ch = curl_init($this->api_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'API (compatible; MSIE 5.01; Windows NT 5.0)');
+        if (is_array($post)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, join('&', $_post));
+        }
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)');
         $result = curl_exec($ch);
         if (curl_errno($ch) != 0 && empty($result)) {
-          $result = false;
+            $result = false;
         }
         curl_close($ch);
         return $result;
     }
-
 }
 
 // Examples
 
 $api = new Api();
 
-# return all services
-$services = $api->services(); 
+$services = $api->services(); # return all services
 
-# return user balance
-$balance = $api->balance(); 
-
+$balance = $api->balance(); # return user balance
 
 // add order
 
@@ -130,8 +89,8 @@ $order = $api->order(array('service' => 1, 'link' => 'http://example.com/test', 
 
 $order = $api->order(array('service' => 1, 'username' => 'username', 'min' => 100, 'max' => 110, 'posts' => 0,'delay' => 30, 'expiry' => '11/11/2019')); # Subscriptions
 
-# return status, charge, remains, start count, order_id
-$status = $api->status(23); 
+$order = $api->order(array('service' => 1, 'link' => 'http://example.com/test', 'quantity' => 100, 'username' => "test")); # Comment Likes
 
-# return orders status, charge, remains, start count, order_id
-$statuses = $api->multi_status([12, 2, 13]); 
+$status = $api->status($order->order); # return status, charge, remains, start count, currency
+
+$statuses = $api->multiStatus([1, 2, 3]); # return orders status, charge, remains, start count, currency
